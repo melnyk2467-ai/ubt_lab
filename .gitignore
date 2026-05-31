@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Environment — never commit live secrets
+backend/.env
+
+# Build output
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
