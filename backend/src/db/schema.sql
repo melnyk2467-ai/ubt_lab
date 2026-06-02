@@ -197,3 +197,47 @@ CREATE TABLE IF NOT EXISTS worker_assignments (
 
 CREATE INDEX IF NOT EXISTS idx_worker_assignments_worker ON worker_assignments(worker_id);
 CREATE INDEX IF NOT EXISTS idx_worker_assignments_type   ON worker_assignments(resource_type);
+
+-- ── Result Upload Center ──────────────────────────────────────────────────────
+-- Extend metrics with shares + watch_time (additive, no breakage)
+ALTER TABLE metrics ADD COLUMN IF NOT EXISTS shares     INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE metrics ADD COLUMN IF NOT EXISTS watch_time INTEGER NOT NULL DEFAULT 0;
+
+-- Worker-submitted result uploads pending admin review.
+-- On approve: a video + metric row is created and video_id is set here.
+-- That keeps all existing dashboard/videos queries working unchanged.
+CREATE TABLE IF NOT EXISTS result_uploads (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  worker_id     UUID NOT NULL  REFERENCES users(id)       ON DELETE CASCADE,
+  -- source (at least one should be set)
+  task_id       UUID           REFERENCES tasks(id)       ON DELETE SET NULL,
+  experiment_id UUID           REFERENCES experiments(id) ON DELETE SET NULL,
+  -- denormalised at submit time for fast queries & analytics foundation
+  bundle_id     UUID           REFERENCES bundles(id)     ON DELETE SET NULL,
+  account_id    UUID           REFERENCES accounts(id)    ON DELETE SET NULL,
+  hypothesis_id UUID           REFERENCES hypotheses(id)  ON DELETE SET NULL,
+  -- result data
+  video_url     TEXT NOT NULL,
+  views         INTEGER NOT NULL DEFAULT 0,
+  likes         INTEGER NOT NULL DEFAULT 0,
+  comments      INTEGER NOT NULL DEFAULT 0,
+  shares        INTEGER NOT NULL DEFAULT 0,
+  watch_time    INTEGER NOT NULL DEFAULT 0, -- seconds
+  notes         TEXT,
+  screenshot_url TEXT,
+  -- review workflow
+  status        TEXT NOT NULL DEFAULT 'pending_review'
+    CHECK (status IN ('pending_review', 'approved', 'rejected')),
+  admin_comment TEXT,
+  reviewed_by   UUID           REFERENCES users(id)       ON DELETE SET NULL,
+  reviewed_at   TIMESTAMPTZ,
+  -- materialised video record (populated on approve)
+  video_id      UUID           REFERENCES videos(id)      ON DELETE SET NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_result_uploads_worker     ON result_uploads(worker_id);
+CREATE INDEX IF NOT EXISTS idx_result_uploads_status     ON result_uploads(status);
+CREATE INDEX IF NOT EXISTS idx_result_uploads_task       ON result_uploads(task_id);
+CREATE INDEX IF NOT EXISTS idx_result_uploads_experiment ON result_uploads(experiment_id);
+CREATE INDEX IF NOT EXISTS idx_result_uploads_bundle     ON result_uploads(bundle_id);

@@ -20,8 +20,11 @@ import ResResults   from './pages/research/Results';
 import Winners      from './pages/research/Winners';
 import Workers          from './pages/team/Workers';
 import WorkerProfile    from './pages/team/WorkerProfile';
-import AssignmentCenter from './pages/AssignmentCenter';
-import WorkerAssignment from './pages/WorkerAssignment';
+import AssignmentCenter    from './pages/AssignmentCenter';
+import WorkerAssignment    from './pages/WorkerAssignment';
+import ResultUploads       from './pages/ResultUploads';
+import ResultUploadNew     from './pages/ResultUploadNew';
+import ResultUploadDetail  from './pages/ResultUploadDetail';
 
 function Protected({ children }) {
   const { user } = useAuth();
@@ -62,6 +65,10 @@ export default function App() {
           <Route path="/workers/:id"                      element={<Protected><WorkerProfile /></Protected>} />
           <Route path="/assignment-center"                element={<Protected><AssignmentCenter /></Protected>} />
           <Route path="/assignment-center/:workerId"      element={<Protected><WorkerAssignment /></Protected>} />
+          {/* Result Upload Center */}
+          <Route path="/result-uploads"                   element={<Protected><ResultUploads /></Protected>} />
+          <Route path="/result-uploads/new"               element={<Protected><ResultUploadNew /></Protected>} />
+          <Route path="/result-uploads/:id"               element={<Protected><ResultUploadDetail /></Protected>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

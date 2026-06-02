@@ -18,6 +18,7 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/workers',            require('./routes/workers'));
 app.use('/api/assignment-center', require('./routes/assignment-center'));
+app.use('/api/result-uploads',   require('./routes/result-uploads'));
 app.use('/api/workspace', require('./routes/workspace'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 

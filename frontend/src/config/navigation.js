@@ -16,6 +16,7 @@ import {
   UserCheck,
   Beaker,
   ClipboardList,
+  Upload,
 } from 'lucide-react';
 
 /**
@@ -68,8 +69,9 @@ export const NAV = [
     icon:  PlaySquare,
     roles: null,
     items: [
-      { to: '/bundles', label: 'Bundles', icon: Package,    roles: ['admin'] },
-      { to: '/videos',  label: 'Videos',  workerLabel: 'My Videos', icon: PlaySquare, roles: null },
+      { to: '/bundles',        label: 'Bundles',         icon: Package,    roles: ['admin'] },
+      { to: '/videos',         label: 'Videos',          workerLabel: 'My Videos',   icon: PlaySquare, roles: null },
+      { to: '/result-uploads', label: 'Result Uploads',  workerLabel: 'My Uploads',  icon: Upload,     roles: null },
     ],
   },
 
