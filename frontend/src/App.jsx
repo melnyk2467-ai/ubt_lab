@@ -20,6 +20,13 @@ import ResResults   from './pages/research/Results';
 import Winners      from './pages/research/Winners';
 import Workers          from './pages/team/Workers';
 import WorkerProfile    from './pages/team/WorkerProfile';
+import Proxies          from './pages/team/Proxies';
+import MyProxies        from './pages/worker/MyProxies';
+
+function ProxiesRoute() {
+  const { user } = useAuth();
+  return user?.role === 'admin' ? <Proxies /> : <MyProxies />;
+}
 import AssignmentCenter    from './pages/AssignmentCenter';
 import WorkerAssignment    from './pages/WorkerAssignment';
 import ResultUploads       from './pages/ResultUploads';
@@ -63,6 +70,7 @@ export default function App() {
           {/* Team */}
           <Route path="/workers"                          element={<Protected><Workers /></Protected>} />
           <Route path="/workers/:id"                      element={<Protected><WorkerProfile /></Protected>} />
+          <Route path="/proxies"                          element={<Protected><ProxiesRoute /></Protected>} />
           <Route path="/assignment-center"                element={<Protected><AssignmentCenter /></Protected>} />
           <Route path="/assignment-center/:workerId"      element={<Protected><WorkerAssignment /></Protected>} />
           {/* Result Upload Center */}

@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import Modal from '../components/Modal';
 import {
   UserCircle, CheckSquare, FlaskConical,
-  Plus, Trash2, ArrowLeft,
+  Plus, Trash2, ArrowLeft, Shield,
 } from 'lucide-react';
 
 /* ─── helpers ────────────────────────────────────────────────────────────── */
@@ -190,6 +190,48 @@ function AssignExpModal({ pool, onAssign, onClose }) {
   );
 }
 
+/* ─── Assign Proxy Modal ─────────────────────────────────────────────────── */
+function AssignProxyModal({ pool, onAssign, onClose }) {
+  const [selected, setSelected] = useState(pool[0]?.id || '');
+  const [saving, setSaving]     = useState(false);
+  const [error, setError]       = useState('');
+
+  async function submit() {
+    if (!selected) return;
+    setSaving(true); setError('');
+    try { await onAssign(selected); onClose(); }
+    catch (e) { setError(e.message); setSaving(false); }
+  }
+
+  return (
+    <Modal title="Assign Proxy" onClose={onClose}
+      footer={<>
+        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={submit} disabled={saving || !pool.length}>
+          {saving ? 'Assigning…' : 'Assign'}
+        </button>
+      </>}>
+      {pool.length === 0 ? (
+        <div className="text-muted" style={{ fontSize: 13 }}>
+          No unassigned proxies available. Create proxies in Team → Proxies first.
+        </div>
+      ) : (
+        <div className="form-group">
+          <label className="form-label">Select Proxy</label>
+          <select className="form-control" value={selected} onChange={e => setSelected(e.target.value)}>
+            {pool.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name} — {p.type}{p.country ? ` (${p.country})` : ''} — {p.status}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {error && <div className="error-msg">{error}</div>}
+    </Modal>
+  );
+}
+
 /* ─── Confirm delete ─────────────────────────────────────────────────────── */
 function ConfirmModal({ message, onConfirm, onClose }) {
   const [busy, setBusy] = useState(false);
@@ -219,7 +261,7 @@ export default function WorkerAssignment() {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
-  const [modal, setModal]     = useState(null); // 'account' | 'task' | 'experiment' | { type:'confirm', … }
+  const [modal, setModal]     = useState(null); // 'account' | 'task' | 'experiment' | 'proxy' | { type:'confirm', … }
 
   const load = useCallback(() => {
     setLoading(true);
@@ -235,7 +277,7 @@ export default function WorkerAssignment() {
   if (error)            return <div className="error-msg" style={{ margin: 24 }}>{error}</div>;
   if (!data)            return null;
 
-  const { worker: w, accounts, tasks, experiments, pool_accounts, pool_experiments, bundles } = data;
+  const { worker: w, accounts, tasks, experiments, pool_accounts, pool_experiments, bundles, proxies = [], pool_proxies = [] } = data;
 
   /* ── actions ─────────────────────────────────────────────────────────── */
   async function assignAccount(accountId) {
@@ -260,6 +302,14 @@ export default function WorkerAssignment() {
   }
   async function removeExp(expId) {
     await api.delete(`/assignment-center/${workerId}/experiments/${expId}`);
+    load();
+  }
+  async function assignProxy(proxyId) {
+    await api.post(`/assignment-center/${workerId}/proxies/${proxyId}`, {});
+    load();
+  }
+  async function removeProxy(proxyId) {
+    await api.delete(`/assignment-center/${workerId}/proxies/${proxyId}`);
     load();
   }
 
@@ -303,6 +353,7 @@ export default function WorkerAssignment() {
               { label: 'Accounts',    value: accounts.length },
               { label: 'Tasks',       value: tasks.length },
               { label: 'Experiments', value: experiments.length },
+              { label: 'Proxies',     value: proxies.length },
             ].map(s => (
               <div key={s.label} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
@@ -557,6 +608,89 @@ export default function WorkerAssignment() {
         )}
       </Section>
 
+      {/* ── Proxies block ───────────────────────────────────────────────── */}
+      <Section
+        icon={Shield}
+        title="Assigned Proxies"
+        count={proxies.length}
+        action={
+          <button className="btn btn-secondary btn-sm" onClick={() => setModal('proxy')}
+            style={{ gap: 5 }}>
+            <Plus size={13} strokeWidth={2} /> Assign Proxy
+          </button>
+        }
+      >
+        {proxies.length === 0 ? <SectionEmpty label="proxies" /> : (
+          <>
+            {/* Desktop table */}
+            <div className="table-wrap hide-mobile">
+              <table>
+                <thead>
+                  <tr><th>Name</th><th>Type</th><th>Country</th><th>Status</th><th>Account</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {proxies.map(p => (
+                    <tr key={p.id}>
+                      <td style={{ fontWeight: 500 }}>{p.name}</td>
+                      <td><span className="badge badge-pending" style={{ textTransform: 'uppercase', fontSize: 10 }}>{p.type}</span></td>
+                      <td className="text-muted">{p.country || '—'}</td>
+                      <td><span className={`badge badge-${p.status === 'active' ? 'active' : p.status === 'banned' ? 'banned' : 'pending'}`}>{p.status}</span></td>
+                      <td className="text-muted">{p.account_login ? `${p.account_platform}/${p.account_login}` : '—'}</td>
+                      <td>
+                        <button className="btn btn-ghost btn-xs"
+                          style={{ color: 'var(--danger)', gap: 4 }}
+                          onClick={() => confirm(
+                            `Unassign proxy "${p.name}" from ${w.name}?`,
+                            () => removeProxy(p.id)
+                          )}>
+                          <Trash2 size={12} strokeWidth={2} /> Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="mobile-cards">
+              {proxies.map(p => (
+                <div className="mc-card" key={p.id}>
+                  <div className="mc-head">
+                    <div className="mc-head-info">
+                      <div className="mc-title">{p.name}</div>
+                      <div className="mc-badges">
+                        <span className={`badge badge-${p.status === 'active' ? 'active' : p.status === 'banned' ? 'banned' : 'pending'}`}>{p.status}</span>
+                        <span className="badge badge-pending" style={{ textTransform: 'uppercase', fontSize: 10 }}>{p.type}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mc-meta" style={{ marginBottom: 0 }}>
+                    <div className="mc-meta-item">
+                      <div className="mc-meta-label">Country</div>
+                      <div className="mc-meta-value">{p.country || '—'}</div>
+                    </div>
+                    <div className="mc-meta-item">
+                      <div className="mc-meta-label">Account</div>
+                      <div className="mc-meta-value">{p.account_login ? `${p.account_platform}/${p.account_login}` : '—'}</div>
+                    </div>
+                  </div>
+                  <div className="mc-actions">
+                    <button className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--danger)', borderColor: 'var(--danger-dim)' }}
+                      onClick={() => confirm(
+                        `Unassign proxy "${p.name}" from ${w.name}?`,
+                        () => removeProxy(p.id)
+                      )}>
+                      <Trash2 size={13} strokeWidth={2} /> Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </Section>
+
       {/* ── Modals ──────────────────────────────────────────────────────── */}
       {modal === 'account' && (
         <AssignAccountModal
@@ -576,6 +710,13 @@ export default function WorkerAssignment() {
         <AssignExpModal
           pool={pool_experiments}
           onAssign={assignExp}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal === 'proxy' && (
+        <AssignProxyModal
+          pool={pool_proxies}
+          onAssign={assignProxy}
           onClose={() => setModal(null)}
         />
       )}

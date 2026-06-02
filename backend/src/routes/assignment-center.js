@@ -9,6 +9,8 @@
  * DELETE /:workerId/tasks/:id         delete a task (removing the assignment)
  * POST   /:workerId/experiments/:id   assign experiment to worker
  * DELETE /:workerId/experiments/:id   unassign experiment from worker
+ * POST   /:workerId/proxies/:proxyId  assign proxy to worker
+ * DELETE /:workerId/proxies/:proxyId  unassign proxy from worker
  */
 const router = require('express').Router();
 const db     = require('../db');
@@ -64,7 +66,7 @@ router.get('/', requireAdmin, async (req, res) => {
 router.get('/:workerId', requireAdmin, async (req, res) => {
   const { workerId } = req.params;
   try {
-    const [workerRes, accountsRes, tasksRes, experimentsRes, poolAccountsRes, poolExpsRes, bundlesRes] =
+    const [workerRes, accountsRes, tasksRes, experimentsRes, poolAccountsRes, poolExpsRes, bundlesRes, proxiesRes, poolProxiesRes] =
       await Promise.all([
 
         // Worker
@@ -135,6 +137,25 @@ router.get('/:workerId', requireAdmin, async (req, res) => {
            WHERE b.status != 'dead'
            ORDER BY b.name`
         ),
+
+        // Assigned proxies for this worker
+        db.query(
+          `SELECT p.id, p.name, p.type, p.country, p.status,
+                  a.login AS account_login, a.platform AS account_platform
+           FROM proxies p
+           LEFT JOIN accounts a ON a.id = p.assigned_account_id
+           WHERE p.assigned_worker_id = $1
+           ORDER BY p.name`,
+          [workerId]
+        ),
+
+        // Available proxies (no worker assigned)
+        db.query(
+          `SELECT id, name, type, country, status
+           FROM proxies
+           WHERE assigned_worker_id IS NULL
+           ORDER BY name`
+        ),
       ]);
 
     if (!workerRes.rows[0]) return res.status(404).json({ error: 'Worker not found' });
@@ -147,6 +168,8 @@ router.get('/:workerId', requireAdmin, async (req, res) => {
       pool_accounts:      poolAccountsRes.rows,
       pool_experiments:   poolExpsRes.rows,
       bundles:            bundlesRes.rows,
+      proxies:            proxiesRes.rows,
+      pool_proxies:       poolProxiesRes.rows,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -246,6 +269,39 @@ router.delete('/:workerId/experiments/:experimentId', requireAdmin, async (req, 
       [experimentId, workerId]
     );
     if (!rowCount) return res.status(404).json({ error: 'Experiment not assigned to this worker' });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Assign proxy → worker ─────────────────────────────────────────────────────
+router.post('/:workerId/proxies/:proxyId', requireAdmin, async (req, res) => {
+  const { workerId, proxyId } = req.params;
+  try {
+    const { rows } = await db.query(
+      `UPDATE proxies SET assigned_worker_id = $1
+       WHERE id = $2
+       RETURNING id, name, type, country, status`,
+      [workerId, proxyId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Proxy not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Unassign proxy from worker ────────────────────────────────────────────────
+router.delete('/:workerId/proxies/:proxyId', requireAdmin, async (req, res) => {
+  const { workerId, proxyId } = req.params;
+  try {
+    const { rowCount } = await db.query(
+      `UPDATE proxies SET assigned_worker_id = NULL
+       WHERE id = $1 AND assigned_worker_id = $2`,
+      [proxyId, workerId]
+    );
+    if (!rowCount) return res.status(404).json({ error: 'Proxy not assigned to this worker' });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

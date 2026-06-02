@@ -241,3 +241,27 @@ CREATE INDEX IF NOT EXISTS idx_result_uploads_status     ON result_uploads(statu
 CREATE INDEX IF NOT EXISTS idx_result_uploads_task       ON result_uploads(task_id);
 CREATE INDEX IF NOT EXISTS idx_result_uploads_experiment ON result_uploads(experiment_id);
 CREATE INDEX IF NOT EXISTS idx_result_uploads_bundle     ON result_uploads(bundle_id);
+
+-- ── Proxy Assignments ─────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS proxies (
+  id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name                TEXT        NOT NULL,
+  host                TEXT        NOT NULL,
+  port                INTEGER     NOT NULL,
+  username            TEXT,
+  password            TEXT,
+  type                TEXT        NOT NULL DEFAULT 'http'
+    CHECK (type IN ('http', 'socks5', 'mobile', 'residential')),
+  country             TEXT,
+  status              TEXT        NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'inactive', 'banned', 'testing')),
+  notes               TEXT,
+  assigned_worker_id  UUID        REFERENCES users(id)    ON DELETE SET NULL,
+  assigned_account_id UUID        REFERENCES accounts(id) ON DELETE SET NULL,
+  visible_to_worker   BOOLEAN     NOT NULL DEFAULT false,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_proxies_worker  ON proxies(assigned_worker_id);
+CREATE INDEX IF NOT EXISTS idx_proxies_account ON proxies(assigned_account_id);
+CREATE INDEX IF NOT EXISTS idx_proxies_status  ON proxies(status);

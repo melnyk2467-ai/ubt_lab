@@ -17,6 +17,7 @@ import {
   Beaker,
   ClipboardList,
   Upload,
+  Shield,
 } from 'lucide-react';
 
 /**
@@ -86,6 +87,7 @@ export const NAV = [
       { to: '/workers',  label: 'Workers',  icon: UserCheck,   roles: ['admin'] },
       { to: '/accounts',           label: 'Accounts',          workerLabel: 'My Accounts', icon: UserCircle,    roles: null },
       { to: '/tasks',              label: 'Tasks',             workerLabel: 'My Tasks',    icon: CheckSquare,  roles: null },
+      { to: '/proxies',            label: 'Proxies',           workerLabel: 'My Proxies',  icon: Shield,       roles: null },
       { to: '/assignment-center',  label: 'Assignment Center',                             icon: ClipboardList, roles: ['admin'] },
     ],
   },
