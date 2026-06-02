@@ -3,17 +3,18 @@ import { api } from '../api/client';
 import Modal from '../components/Modal';
 
 const STATUSES = ['testing', 'working', 'dead'];
+const STATUS_COLORS = { testing: 'warmup', working: 'active', dead: 'banned' };
 
 function BundleModal({ bundle, offers, onSave, onClose }) {
   const [form, setForm] = useState({
     offer_id: bundle?.offer_id || (offers[0]?.id || ''),
-    name: bundle?.name || '',
-    angle: bundle?.angle || '',
-    hook: bundle?.hook || '',
-    concept: bundle?.concept || '',
-    status: bundle?.status || 'testing',
+    name:     bundle?.name     || '',
+    angle:    bundle?.angle    || '',
+    hook:     bundle?.hook     || '',
+    concept:  bundle?.concept  || '',
+    status:   bundle?.status   || 'testing',
   });
-  const [error, setError] = useState('');
+  const [error, setError]   = useState('');
   const [saving, setSaving] = useState(false);
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -22,7 +23,7 @@ function BundleModal({ bundle, offers, onSave, onClose }) {
     setError(''); setSaving(true);
     try {
       if (bundle) await api.put(`/bundles/${bundle.id}`, form);
-      else await api.post('/bundles', form);
+      else        await api.post('/bundles', form);
       onSave();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
@@ -30,7 +31,8 @@ function BundleModal({ bundle, offers, onSave, onClose }) {
 
   return (
     <Modal title={bundle ? 'Edit Bundle' : 'Create Bundle'} onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+               <button className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button></>}>
       <form onSubmit={submit}>
         <div className="form-group">
           <label className="form-label">Offer</label>
@@ -68,11 +70,9 @@ function BundleModal({ bundle, offers, onSave, onClose }) {
   );
 }
 
-const STATUS_COLORS = { testing: 'warmup', working: 'active', dead: 'banned' };
-
 export default function Bundles() {
   const [bundles, setBundles] = useState([]);
-  const [offers, setOffers] = useState([]);
+  const [offers, setOffers]   = useState([]);
   const [filterOffer, setFilterOffer] = useState('');
   const [modal, setModal] = useState(null);
 
@@ -102,15 +102,16 @@ export default function Bundles() {
         <button className="btn btn-primary" onClick={() => setModal('create')}>+ Create Bundle</button>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <select className="form-control" style={{ width: 240 }} value={filterOffer} onChange={e => setFilterOffer(e.target.value)}>
+      <div className="filter-bar">
+        <select className="form-control" value={filterOffer} onChange={e => setFilterOffer(e.target.value)}>
           <option value="">All Offers</option>
           {offers.map(o => <option key={o.id} value={o.id}>{o.name} ({o.geo})</option>)}
         </select>
       </div>
 
       <div className="card">
-        <div className="table-wrap">
+        {/* Desktop table */}
+        <div className="table-wrap hide-mobile">
           <table>
             <thead>
               <tr><th>Name</th><th>Offer</th><th>Angle</th><th>Hook</th><th>Status</th><th>Creator</th><th>Created</th><th></th></tr>
@@ -124,12 +125,8 @@ export default function Bundles() {
                   <td className="text-muted">{b.angle}</td>
                   <td className="text-muted" style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.hook}</td>
                   <td>
-                    <select
-                      className="form-control"
-                      style={{ padding: '3px 6px', width: 'auto', fontSize: 12 }}
-                      value={b.status}
-                      onChange={e => quickStatus(b, e.target.value)}
-                    >
+                    <select className="form-control" style={{ padding: '3px 6px', width: 'auto', fontSize: 12 }}
+                      value={b.status} onChange={e => quickStatus(b, e.target.value)}>
                       {STATUSES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </td>
@@ -143,6 +140,56 @@ export default function Bundles() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="mobile-cards">
+          {bundles.length === 0 && <div className="empty">No bundles yet</div>}
+          {bundles.map(b => (
+            <div className="mc-card" key={b.id}>
+              <div className="mc-head">
+                <div className="mc-head-info">
+                  <div className="mc-title">{b.name}</div>
+                  <div className="mc-badges">
+                    <span className={`badge badge-${STATUS_COLORS[b.status] || b.status}`}>{b.status}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{b.offer_name}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mc-meta" style={{ marginBottom: 10 }}>
+                <div className="mc-meta-item mc-meta-full">
+                  <div className="mc-meta-label">Status</div>
+                  <select className="mc-select" value={b.status} onChange={e => quickStatus(b, e.target.value)}>
+                    {STATUSES.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                {b.angle && (
+                  <div className="mc-meta-item">
+                    <div className="mc-meta-label">Angle</div>
+                    <div className="mc-meta-value">{b.angle}</div>
+                  </div>
+                )}
+                {b.hook && (
+                  <div className="mc-meta-item">
+                    <div className="mc-meta-label">Hook</div>
+                    <div className="mc-meta-value">{b.hook}</div>
+                  </div>
+                )}
+                <div className="mc-meta-item">
+                  <div className="mc-meta-label">Creator</div>
+                  <div className="mc-meta-value">{b.creator_name}</div>
+                </div>
+                <div className="mc-meta-item">
+                  <div className="mc-meta-label">Created</div>
+                  <div className="mc-meta-value">{new Date(b.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div className="mc-actions">
+                <button className="btn btn-secondary btn-sm" onClick={() => setModal(b)}>Edit</button>
+                <button className="btn btn-danger btn-sm" onClick={() => del(b.id)}>Delete</button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

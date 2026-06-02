@@ -21,32 +21,17 @@ function UserModal({ user, onSave, onClose }) {
     try {
       const body = { ...form };
       if (!body.password) delete body.password;
-      if (user) {
-        await api.put(`/users/${user.id}`, body);
-      } else {
-        await api.post('/users', body);
-      }
+      if (user) await api.put(`/users/${user.id}`, body);
+      else      await api.post('/users', body);
       onSave();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { setError(err.message); }
+    finally { setSaving(false); }
   }
 
   return (
-    <Modal
-      title={user ? 'Edit User' : 'Create User'}
-      onClose={onClose}
-      footer={
-        <>
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={submit} disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </>
-      }
-    >
+    <Modal title={user ? 'Edit User' : 'Create User'} onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+               <button className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button></>}>
       <form onSubmit={submit}>
         <div className="form-group">
           <label className="form-label">Name</label>
@@ -84,12 +69,9 @@ function UserModal({ user, onSave, onClose }) {
 
 export default function Users() {
   const [users, setUsers] = useState([]);
-  const [modal, setModal] = useState(null); // null | 'create' | user object
+  const [modal, setModal] = useState(null);
 
-  function load() {
-    api.get('/users').then(setUsers).catch(console.error);
-  }
-
+  function load() { api.get('/users').then(setUsers).catch(console.error); }
   useEffect(load, []);
 
   async function del(id) {
@@ -106,22 +88,16 @@ export default function Users() {
       </div>
 
       <div className="card">
-        <div className="table-wrap">
+        {/* Desktop table */}
+        <div className="table-wrap hide-mobile">
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th></th>
+                <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th></th>
               </tr>
             </thead>
             <tbody>
-              {users.length === 0 && (
-                <tr><td colSpan={6} className="empty">No users yet</td></tr>
-              )}
+              {users.length === 0 && <tr><td colSpan={6} className="empty">No users yet</td></tr>}
               {users.map(u => (
                 <tr key={u.id}>
                   <td>{u.name}</td>
@@ -139,6 +115,38 @@ export default function Users() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="mobile-cards">
+          {users.length === 0 && <div className="empty">No users yet</div>}
+          {users.map(u => (
+            <div className="mc-card" key={u.id}>
+              <div className="mc-head">
+                <div className="mc-head-info">
+                  <div className="mc-title">{u.name}</div>
+                  <div className="mc-badges">
+                    <span className={`badge badge-${u.role}`}>{u.role}</span>
+                    <span className={`badge badge-${u.is_active ? 'active' : 'banned'}`}>{u.is_active ? 'Active' : 'Inactive'}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mc-meta">
+                <div className="mc-meta-item mc-meta-full">
+                  <div className="mc-meta-label">Email</div>
+                  <div className="mc-meta-value">{u.email}</div>
+                </div>
+                <div className="mc-meta-item">
+                  <div className="mc-meta-label">Joined</div>
+                  <div className="mc-meta-value">{new Date(u.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div className="mc-actions">
+                <button className="btn btn-secondary btn-sm" onClick={() => setModal(u)}>Edit</button>
+                <button className="btn btn-danger btn-sm" onClick={() => del(u.id)}>Delete</button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

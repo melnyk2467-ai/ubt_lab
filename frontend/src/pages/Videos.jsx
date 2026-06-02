@@ -9,15 +9,19 @@ function fmt(n) {
   return n;
 }
 
+function shortUrl(url = '') {
+  try { return new URL(url).hostname.replace('www.', '') + '…'; } catch { return url.slice(0, 30) + '…'; }
+}
+
 function VideoModal({ video, accounts, bundles, onSave, onClose }) {
   const [form, setForm] = useState({
-    account_id: video?.account_id || (accounts[0]?.id || ''),
-    bundle_id: video?.bundle_id || (bundles[0]?.id || ''),
-    url: video?.url || '',
+    account_id:  video?.account_id  || (accounts[0]?.id || ''),
+    bundle_id:   video?.bundle_id   || (bundles[0]?.id  || ''),
+    url:         video?.url         || '',
     description: video?.description || '',
-    posted_at: video?.posted_at ? video.posted_at.slice(0, 10) : '',
+    posted_at:   video?.posted_at   ? video.posted_at.slice(0, 10) : '',
   });
-  const [error, setError] = useState('');
+  const [error, setError]   = useState('');
   const [saving, setSaving] = useState(false);
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -27,7 +31,7 @@ function VideoModal({ video, accounts, bundles, onSave, onClose }) {
     try {
       const body = { ...form, posted_at: form.posted_at || null };
       if (video) await api.put(`/videos/${video.id}`, body);
-      else await api.post('/videos', body);
+      else       await api.post('/videos', body);
       onSave();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
@@ -35,7 +39,8 @@ function VideoModal({ video, accounts, bundles, onSave, onClose }) {
 
   return (
     <Modal title={video ? 'Edit Video' : 'Add Video'} onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+               <button className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button></>}>
       <form onSubmit={submit}>
         <div className="form-group">
           <label className="form-label">Video URL</label>
@@ -70,16 +75,16 @@ function VideoModal({ video, accounts, bundles, onSave, onClose }) {
 }
 
 export default function Videos() {
-  const [videos, setVideos] = useState([]);
+  const [videos, setVideos]     = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [bundles, setBundles] = useState([]);
-  const [filterBundle, setFilterBundle] = useState('');
+  const [bundles, setBundles]   = useState([]);
+  const [filterBundle, setFilterBundle]   = useState('');
   const [filterAccount, setFilterAccount] = useState('');
   const [modal, setModal] = useState(null);
 
   function load() {
     const params = new URLSearchParams();
-    if (filterBundle) params.set('bundle_id', filterBundle);
+    if (filterBundle)  params.set('bundle_id',  filterBundle);
     if (filterAccount) params.set('account_id', filterAccount);
     const q = params.toString() ? '?' + params.toString() : '';
     api.get(`/videos${q}`).then(setVideos).catch(console.error);
@@ -89,7 +94,6 @@ export default function Videos() {
     api.get('/accounts').then(setAccounts);
     api.get('/bundles').then(setBundles);
   }, []);
-
   useEffect(load, [filterBundle, filterAccount]);
 
   async function del(id) {
@@ -105,31 +109,26 @@ export default function Videos() {
         <button className="btn btn-primary" onClick={() => setModal('create')}>+ Add Video</button>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <select className="form-control" style={{ width: 220 }} value={filterBundle} onChange={e => setFilterBundle(e.target.value)}>
+      <div className="filter-bar">
+        <select className="form-control" value={filterBundle} onChange={e => setFilterBundle(e.target.value)}>
           <option value="">All Bundles</option>
           {bundles.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
-        <select className="form-control" style={{ width: 220 }} value={filterAccount} onChange={e => setFilterAccount(e.target.value)}>
+        <select className="form-control" value={filterAccount} onChange={e => setFilterAccount(e.target.value)}>
           <option value="">All Accounts</option>
           {accounts.map(a => <option key={a.id} value={a.id}>{a.login} ({a.platform})</option>)}
         </select>
       </div>
 
       <div className="card">
-        <div className="table-wrap">
+        {/* Desktop table */}
+        <div className="table-wrap hide-mobile">
           <table>
             <thead>
               <tr>
-                <th>URL</th>
-                <th>Worker</th>
-                <th>Account</th>
-                <th>Bundle</th>
-                <th>Posted</th>
-                <th className="text-right">Views</th>
-                <th className="text-right">Likes</th>
-                <th className="text-right">Comments</th>
-                <th></th>
+                <th>URL</th><th>Worker</th><th>Account</th><th>Bundle</th>
+                <th>Posted</th><th className="text-right">Views</th>
+                <th className="text-right">Likes</th><th className="text-right">Comments</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -159,6 +158,61 @@ export default function Videos() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="mobile-cards">
+          {videos.length === 0 && <div className="empty">No videos yet</div>}
+          {videos.map(v => {
+            const views = parseInt(v.latest_views) || 0;
+            const viewColor = views >= 50000 ? 'var(--success)' : views >= 10000 ? 'var(--accent)' : 'var(--text)';
+            return (
+              <div className="mc-card" key={v.id}>
+                <div className="mc-head">
+                  <div className="mc-head-info">
+                    <div className="mc-title-wrap">
+                      <a href={v.url} target="_blank" rel="noopener noreferrer">{shortUrl(v.url)}</a>
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: viewColor, fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>
+                      {fmt(v.latest_views)} <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>views</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mc-meta">
+                  <div className="mc-meta-item">
+                    <div className="mc-meta-label">Bundle</div>
+                    <div className="mc-meta-value">{v.bundle_name || '—'}</div>
+                  </div>
+                  <div className="mc-meta-item">
+                    <div className="mc-meta-label">Account</div>
+                    <div className="mc-meta-value">{v.platform} / {v.account_login}</div>
+                  </div>
+                  <div className="mc-meta-item">
+                    <div className="mc-meta-label">Likes</div>
+                    <div className="mc-meta-value num">{fmt(v.latest_likes)}</div>
+                  </div>
+                  <div className="mc-meta-item">
+                    <div className="mc-meta-label">Comments</div>
+                    <div className="mc-meta-value num">{fmt(v.latest_comments)}</div>
+                  </div>
+                  {v.worker_name && (
+                    <div className="mc-meta-item">
+                      <div className="mc-meta-label">Worker</div>
+                      <div className="mc-meta-value">{v.worker_name}</div>
+                    </div>
+                  )}
+                  <div className="mc-meta-item">
+                    <div className="mc-meta-label">Posted</div>
+                    <div className="mc-meta-value">{v.posted_at ? new Date(v.posted_at).toLocaleDateString() : '—'}</div>
+                  </div>
+                </div>
+                <div className="mc-actions">
+                  <button className="btn btn-secondary btn-sm" onClick={() => setModal(v)}>Edit</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => del(v.id)}>Delete</button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

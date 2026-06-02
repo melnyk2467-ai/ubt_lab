@@ -4,13 +4,13 @@ import Modal from '../components/Modal';
 
 function OfferModal({ offer, onSave, onClose }) {
   const [form, setForm] = useState({
-    name: offer?.name || '',
-    geo: offer?.geo || '',
-    payout: offer?.payout || 0,
-    notes: offer?.notes || '',
+    name:      offer?.name      || '',
+    geo:       offer?.geo       || '',
+    payout:    offer?.payout    || 0,
+    notes:     offer?.notes     || '',
     is_active: offer?.is_active ?? true,
   });
-  const [error, setError] = useState('');
+  const [error, setError]   = useState('');
   const [saving, setSaving] = useState(false);
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -19,7 +19,7 @@ function OfferModal({ offer, onSave, onClose }) {
     setError(''); setSaving(true);
     try {
       if (offer) await api.put(`/offers/${offer.id}`, form);
-      else await api.post('/offers', form);
+      else       await api.post('/offers', form);
       onSave();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
@@ -27,7 +27,8 @@ function OfferModal({ offer, onSave, onClose }) {
 
   return (
     <Modal title={offer ? 'Edit Offer' : 'Create Offer'} onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button></>}>
+      footer={<><button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+               <button className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button></>}>
       <form onSubmit={submit}>
         <div className="form-group">
           <label className="form-label">Offer Name</label>
@@ -62,7 +63,7 @@ function OfferModal({ offer, onSave, onClose }) {
 
 export default function Offers() {
   const [offers, setOffers] = useState([]);
-  const [modal, setModal] = useState(null);
+  const [modal, setModal]   = useState(null);
 
   function load() { api.get('/offers').then(setOffers).catch(console.error); }
   useEffect(load, []);
@@ -81,7 +82,8 @@ export default function Offers() {
       </div>
 
       <div className="card">
-        <div className="table-wrap">
+        {/* Desktop table */}
+        <div className="table-wrap hide-mobile">
           <table>
             <thead>
               <tr><th>Name</th><th>GEO</th><th>Payout</th><th>Status</th><th>Notes</th><th>Created</th><th></th></tr>
@@ -104,6 +106,47 @@ export default function Offers() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="mobile-cards">
+          {offers.length === 0 && <div className="empty">No offers yet</div>}
+          {offers.map(o => (
+            <div className="mc-card" key={o.id}>
+              <div className="mc-head">
+                <div className="mc-head-info">
+                  <div className="mc-title">{o.name}</div>
+                  <div className="mc-badges">
+                    <span className={`badge badge-${o.is_active ? 'active' : 'banned'}`}>{o.is_active ? 'Active' : 'Paused'}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mc-meta">
+                <div className="mc-meta-item">
+                  <div className="mc-meta-label">GEO</div>
+                  <div className="mc-meta-value">{o.geo}</div>
+                </div>
+                <div className="mc-meta-item">
+                  <div className="mc-meta-label">Payout</div>
+                  <div className="mc-meta-value num" style={{ fontWeight: 700, color: 'var(--success)' }}>${o.payout.toFixed(2)}</div>
+                </div>
+                {o.notes && (
+                  <div className="mc-meta-item mc-meta-full">
+                    <div className="mc-meta-label">Notes</div>
+                    <div className="mc-meta-value" style={{ whiteSpace: 'normal', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{o.notes}</div>
+                  </div>
+                )}
+                <div className="mc-meta-item">
+                  <div className="mc-meta-label">Created</div>
+                  <div className="mc-meta-value">{new Date(o.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div className="mc-actions">
+                <button className="btn btn-secondary btn-sm" onClick={() => setModal(o)}>Edit</button>
+                <button className="btn btn-danger btn-sm" onClick={() => del(o.id)}>Delete</button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

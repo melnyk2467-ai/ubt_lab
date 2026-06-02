@@ -3,6 +3,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 
+// Public status check — tells the frontend whether any users exist yet.
+// Used to hide the "Set up admin account" link after initial setup is complete.
+router.get('/status', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT COUNT(*) FROM users');
+    res.json({ has_users: parseInt(rows[0].count) > 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
