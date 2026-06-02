@@ -79,6 +79,81 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ─── RESEARCH ENGINE ──────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS ideas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  source TEXT,
+  creator_id UUID NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'reviewing', 'archived')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS patterns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  creator_id UUID NOT NULL REFERENCES users(id),
+  confidence_score INTEGER NOT NULL DEFAULT 5 CHECK (confidence_score BETWEEN 1 AND 10),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pattern_ideas (
+  pattern_id UUID NOT NULL REFERENCES patterns(id) ON DELETE CASCADE,
+  idea_id    UUID NOT NULL REFERENCES ideas(id)    ON DELETE CASCADE,
+  PRIMARY KEY (pattern_id, idea_id)
+);
+
+CREATE TABLE IF NOT EXISTS hypotheses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  linked_pattern_id UUID REFERENCES patterns(id) ON DELETE SET NULL,
+  expected_result TEXT,
+  priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
+  status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'testing', 'completed', 'failed')),
+  creator_id UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS experiments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hypothesis_id      UUID NOT NULL REFERENCES hypotheses(id) ON DELETE CASCADE,
+  assigned_worker_id UUID REFERENCES users(id)    ON DELETE SET NULL,
+  assigned_account_id UUID REFERENCES accounts(id) ON DELETE SET NULL,
+  assigned_bundle_id UUID REFERENCES bundles(id)  ON DELETE SET NULL,
+  start_date DATE,
+  end_date   DATE,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  experiment_id UUID NOT NULL REFERENCES experiments(id) ON DELETE CASCADE,
+  views            INTEGER NOT NULL DEFAULT 0,
+  likes            INTEGER NOT NULL DEFAULT 0,
+  comments         INTEGER NOT NULL DEFAULT 0,
+  shares           INTEGER NOT NULL DEFAULT 0,
+  watch_time       INTEGER NOT NULL DEFAULT 0,
+  conversion_notes TEXT,
+  conclusion       TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS winners (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title            TEXT NOT NULL,
+  linked_result_id UUID REFERENCES results(id)  ON DELETE SET NULL,
+  linked_bundle_id UUID REFERENCES bundles(id)  ON DELETE SET NULL,
+  winning_reason   TEXT,
+  scaling_notes    TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes for common lookups
 CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_bundles_offer_id ON bundles(offer_id);
@@ -87,3 +162,38 @@ CREATE INDEX IF NOT EXISTS idx_videos_account_id ON videos(account_id);
 CREATE INDEX IF NOT EXISTS idx_metrics_video_id ON metrics(video_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
 CREATE INDEX IF NOT EXISTS idx_notes_bundle_id ON notes(bundle_id);
+
+-- ── Team Assignment System ────────────────────────────────────────────────────
+-- Allow accounts to exist without an assigned worker (unassign support).
+-- ALTER … DROP NOT NULL is idempotent in PostgreSQL — safe to run on every startup.
+ALTER TABLE accounts ALTER COLUMN user_id DROP NOT NULL;
+
+-- Research Engine indexes
+CREATE INDEX IF NOT EXISTS idx_ideas_creator_id       ON ideas(creator_id);
+CREATE INDEX IF NOT EXISTS idx_ideas_status           ON ideas(status);
+CREATE INDEX IF NOT EXISTS idx_patterns_creator_id    ON patterns(creator_id);
+CREATE INDEX IF NOT EXISTS idx_hypotheses_status      ON hypotheses(status);
+CREATE INDEX IF NOT EXISTS idx_hypotheses_pattern_id  ON hypotheses(linked_pattern_id);
+CREATE INDEX IF NOT EXISTS idx_experiments_hypothesis ON experiments(hypothesis_id);
+CREATE INDEX IF NOT EXISTS idx_experiments_worker     ON experiments(assigned_worker_id);
+CREATE INDEX IF NOT EXISTS idx_results_experiment     ON results(experiment_id);
+CREATE INDEX IF NOT EXISTS idx_winners_result         ON winners(linked_result_id);
+
+-- ── Future-Ready Assignment System ───────────────────────────────────────────
+-- Generic assignment table for extensible resource types.
+-- Existing resources (accounts, tasks, experiments) use their own FK columns.
+-- New resource types (proxy, device, creative, farm) should add a row here
+-- plus their own table, then reference this for the worker linkage.
+CREATE TABLE IF NOT EXISTS worker_assignments (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  worker_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  resource_type TEXT        NOT NULL, -- 'proxy' | 'device' | 'creative' | 'farm' | …
+  resource_id   UUID        NOT NULL,
+  notes         TEXT,
+  assigned_by   UUID        REFERENCES users(id) ON DELETE SET NULL,
+  assigned_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (worker_id, resource_type, resource_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_worker_assignments_worker ON worker_assignments(worker_id);
+CREATE INDEX IF NOT EXISTS idx_worker_assignments_type   ON worker_assignments(resource_type);

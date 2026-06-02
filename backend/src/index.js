@@ -16,7 +16,18 @@ app.use('/api/videos', require('./routes/videos'));
 app.use('/api/metrics', require('./routes/metrics'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/notes', require('./routes/notes'));
+app.use('/api/workers',            require('./routes/workers'));
+app.use('/api/assignment-center', require('./routes/assignment-center'));
+app.use('/api/workspace', require('./routes/workspace'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+
+// Research Engine
+app.use('/api/research/ideas',       require('./routes/research/ideas'));
+app.use('/api/research/patterns',    require('./routes/research/patterns'));
+app.use('/api/research/hypotheses',  require('./routes/research/hypotheses'));
+app.use('/api/research/experiments', require('./routes/research/experiments'));
+app.use('/api/research/results',     require('./routes/research/results'));
+app.use('/api/research/winners',     require('./routes/research/winners'));
 
 app.get('/api/health', (_, res) => res.json({ ok: true }));
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +12,16 @@ import Bundles from './pages/Bundles';
 import Videos from './pages/Videos';
 import Metrics from './pages/Metrics';
 import Tasks from './pages/Tasks';
+import Ideas        from './pages/research/Ideas';
+import Patterns     from './pages/research/Patterns';
+import Hypotheses   from './pages/research/Hypotheses';
+import Experiments  from './pages/research/Experiments';
+import ResResults   from './pages/research/Results';
+import Winners      from './pages/research/Winners';
+import Workers          from './pages/team/Workers';
+import WorkerProfile    from './pages/team/WorkerProfile';
+import AssignmentCenter from './pages/AssignmentCenter';
+import WorkerAssignment from './pages/WorkerAssignment';
 
 function Protected({ children }) {
   const { user } = useAuth();
@@ -26,6 +37,7 @@ function PublicOnly({ children }) {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -38,9 +50,22 @@ export default function App() {
           <Route path="/videos" element={<Protected><Videos /></Protected>} />
           <Route path="/metrics" element={<Protected><Metrics /></Protected>} />
           <Route path="/tasks" element={<Protected><Tasks /></Protected>} />
+          {/* Research Engine */}
+          <Route path="/research/ideas"       element={<Protected><Ideas /></Protected>} />
+          <Route path="/research/patterns"    element={<Protected><Patterns /></Protected>} />
+          <Route path="/research/hypotheses"  element={<Protected><Hypotheses /></Protected>} />
+          <Route path="/research/experiments" element={<Protected><Experiments /></Protected>} />
+          <Route path="/research/results"     element={<Protected><ResResults /></Protected>} />
+          <Route path="/research/winners"     element={<Protected><Winners /></Protected>} />
+          {/* Team */}
+          <Route path="/workers"                          element={<Protected><Workers /></Protected>} />
+          <Route path="/workers/:id"                      element={<Protected><WorkerProfile /></Protected>} />
+          <Route path="/assignment-center"                element={<Protected><AssignmentCenter /></Protected>} />
+          <Route path="/assignment-center/:workerId"      element={<Protected><WorkerAssignment /></Protected>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
