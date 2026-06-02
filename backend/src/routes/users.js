@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAdmin, async (req, res) => {
   try {
     const { rows } = await db.query(
       'SELECT id, name, email, role, is_active, created_at FROM users ORDER BY created_at DESC'
@@ -30,7 +30,7 @@ router.post('/', requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAdmin, async (req, res) => {
   try {
     const { rows } = await db.query(
       'SELECT id, name, email, role, is_active, created_at FROM users WHERE id = $1',
