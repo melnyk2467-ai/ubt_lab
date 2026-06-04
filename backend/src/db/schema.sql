@@ -265,3 +265,30 @@ CREATE TABLE IF NOT EXISTS proxies (
 CREATE INDEX IF NOT EXISTS idx_proxies_worker  ON proxies(assigned_worker_id);
 CREATE INDEX IF NOT EXISTS idx_proxies_account ON proxies(assigned_account_id);
 CREATE INDEX IF NOT EXISTS idx_proxies_status  ON proxies(status);
+
+-- ── UBT Bundles (testing combinations) ───────────────────────────────────────
+-- Separate from content `bundles` table which has FK chains to tasks/experiments.
+CREATE TABLE IF NOT EXISTS test_bundles (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name            TEXT        NOT NULL,
+  status          TEXT        NOT NULL DEFAULT 'draft'
+    CHECK (status IN ('draft', 'testing', 'winner', 'dead', 'retest')),
+  geo             TEXT,
+  offer           TEXT,
+  source_platform TEXT,
+  account_type    TEXT,
+  proxy_setup     TEXT,
+  creative_angle  TEXT,
+  hypothesis      TEXT,
+  owner_id        UUID        REFERENCES users(id) ON DELETE SET NULL,
+  start_date      DATE,
+  end_date        DATE,
+  notes           TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_test_bundles_status   ON test_bundles(status);
+CREATE INDEX IF NOT EXISTS idx_test_bundles_geo      ON test_bundles(geo);
+CREATE INDEX IF NOT EXISTS idx_test_bundles_platform ON test_bundles(source_platform);
+CREATE INDEX IF NOT EXISTS idx_test_bundles_owner    ON test_bundles(owner_id);

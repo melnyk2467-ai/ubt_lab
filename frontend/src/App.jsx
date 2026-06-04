@@ -18,6 +18,8 @@ import Hypotheses   from './pages/research/Hypotheses';
 import Experiments  from './pages/research/Experiments';
 import ResResults   from './pages/research/Results';
 import Winners      from './pages/research/Winners';
+import TestBundles       from './pages/TestBundles';
+import TestBundleDetail  from './pages/TestBundleDetail';
 import Workers          from './pages/team/Workers';
 import WorkerProfile    from './pages/team/WorkerProfile';
 import Proxies          from './pages/team/Proxies';
@@ -60,6 +62,9 @@ export default function App() {
           <Route path="/videos" element={<Protected><Videos /></Protected>} />
           <Route path="/metrics" element={<Protected><Metrics /></Protected>} />
           <Route path="/tasks" element={<Protected><Tasks /></Protected>} />
+          {/* UBT Bundles */}
+          <Route path="/test-bundles"     element={<Protected><TestBundles /></Protected>} />
+          <Route path="/test-bundles/:id" element={<Protected><TestBundleDetail /></Protected>} />
           {/* Research Engine */}
           <Route path="/research/ideas"       element={<Protected><Ideas /></Protected>} />
           <Route path="/research/patterns"    element={<Protected><Patterns /></Protected>} />

@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Upload,
   Shield,
+  Layers,
 } from 'lucide-react';
 
 /**
@@ -44,6 +45,16 @@ export const NAV = [
     to:    '/',
     label: 'Dashboard',
     icon:  LayoutDashboard,
+    roles: null,
+  },
+
+  // ── UBT Bundles ──────────────────────────────────────────────────────────────
+  {
+    type:  'link',
+    to:    '/test-bundles',
+    label: 'UBT Bundles',
+    workerLabel: 'My Bundles',
+    icon:  Layers,
     roles: null,
   },
 
