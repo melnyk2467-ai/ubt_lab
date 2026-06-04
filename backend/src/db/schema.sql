@@ -342,3 +342,11 @@ CREATE INDEX IF NOT EXISTS idx_exp_res_worker     ON experiment_results(worker_i
 CREATE INDEX IF NOT EXISTS idx_exp_res_bundle     ON experiment_results(test_bundle_id);
 CREATE INDEX IF NOT EXISTS idx_exp_res_experiment ON experiment_results(test_bundle_experiment_id);
 CREATE INDEX IF NOT EXISTS idx_exp_res_status     ON experiment_results(status);
+
+-- Platform/task metrics submitted by workers (added after initial release)
+ALTER TABLE experiment_results ADD COLUMN IF NOT EXISTS comments       INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE experiment_results ADD COLUMN IF NOT EXISTS shares         INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE experiment_results ADD COLUMN IF NOT EXISTS saves          INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE experiment_results ADD COLUMN IF NOT EXISTS account_status TEXT;
+ALTER TABLE experiment_results ADD COLUMN IF NOT EXISTS video_status   TEXT;
+ALTER TABLE experiment_results ADD COLUMN IF NOT EXISTS screenshot_url TEXT;

@@ -58,9 +58,11 @@ export default function MyResults() {
                 <th>Experiment</th>
                 <th className="text-right">Views</th>
                 <th className="text-right">Likes</th>
-                <th className="text-right">Regs</th>
-                <th className="text-right">Leads</th>
-                <th className="text-right">Deps</th>
+                <th className="text-right">Comments</th>
+                <th className="text-right">Shares</th>
+                <th className="text-right">Saves</th>
+                <th>Account</th>
+                <th>Video</th>
                 <th>Status</th>
                 <th>Submitted</th>
                 <th>Feedback</th>
@@ -77,9 +79,11 @@ export default function MyResults() {
                   <td style={{ fontWeight: 500 }}>{r.experiment_name || '—'}</td>
                   <td className="text-right num">{fmt(r.views)}</td>
                   <td className="text-right num">{fmt(r.likes)}</td>
-                  <td className="text-right num">{fmt(r.registrations)}</td>
-                  <td className="text-right num">{fmt(r.leads)}</td>
-                  <td className="text-right num">{fmt(r.deposits)}</td>
+                  <td className="text-right num">{fmt(r.comments)}</td>
+                  <td className="text-right num">{fmt(r.shares)}</td>
+                  <td className="text-right num">{fmt(r.saves)}</td>
+                  <td className="text-muted">{r.account_status || '—'}</td>
+                  <td className="text-muted">{r.video_status || '—'}</td>
                   <td>
                     <span className={`badge badge-${STATUS_BADGE[r.status]}`}>{r.status}</span>
                   </td>
@@ -116,16 +120,16 @@ export default function MyResults() {
                   <div className="mc-stat-label">Views</div>
                 </div>
                 <div className="mc-stat">
-                  <div className="mc-stat-value">{fmt(r.registrations)}</div>
-                  <div className="mc-stat-label">Regs</div>
+                  <div className="mc-stat-value">{fmt(r.likes)}</div>
+                  <div className="mc-stat-label">Likes</div>
                 </div>
                 <div className="mc-stat">
-                  <div className="mc-stat-value">{fmt(r.leads)}</div>
-                  <div className="mc-stat-label">Leads</div>
+                  <div className="mc-stat-value">{fmt(r.shares)}</div>
+                  <div className="mc-stat-label">Shares</div>
                 </div>
                 <div className="mc-stat">
-                  <div className="mc-stat-value">{fmt(r.deposits)}</div>
-                  <div className="mc-stat-label">Deps</div>
+                  <div className="mc-stat-value">{fmt(r.saves)}</div>
+                  <div className="mc-stat-label">Saves</div>
                 </div>
               </div>
               {r.admin_feedback && (

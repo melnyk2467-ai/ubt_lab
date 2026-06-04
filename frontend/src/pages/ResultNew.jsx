@@ -1,12 +1,15 @@
 /**
  * ResultNew — worker submit form for experiment-based results.
- * Tied to test_bundle_experiments (not legacy result_uploads).
- * Old form at /result-uploads/new remains for backward compat.
+ * Platform/task metrics only. Conversion metrics (registrations, leads, deposits)
+ * are admin-only and never shown here.
  */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { Upload, FlaskConical } from 'lucide-react';
+
+const ACCOUNT_STATUS_OPTIONS = ['active', 'banned', 'warming up', 'restricted', 'other'];
+const VIDEO_STATUS_OPTIONS   = ['posted', 'removed', 'shadow-banned', 'viral', 'other'];
 
 export default function ResultNew() {
   const navigate = useNavigate();
@@ -16,17 +19,19 @@ export default function ResultNew() {
 
   const [form, setForm] = useState({
     test_bundle_experiment_id: '',
-    views:         '',
-    likes:         '',
-    registrations: '',
-    leads:         '',
-    deposits:      '',
-    notes:         '',
+    views:          '',
+    likes:          '',
+    comments:       '',
+    shares:         '',
+    saves:          '',
+    account_status: '',
+    video_status:   '',
+    screenshot_url: '',
+    notes:          '',
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState('');
 
-  // Load worker's active experiments
   useEffect(() => {
     api.get('/experiment-results/context')
       .then(setExperiments)
@@ -45,12 +50,15 @@ export default function ResultNew() {
     try {
       await api.post('/experiment-results', {
         test_bundle_experiment_id: form.test_bundle_experiment_id,
-        views:         parseInt(form.views)         || 0,
-        likes:         parseInt(form.likes)         || 0,
-        registrations: parseInt(form.registrations) || 0,
-        leads:         parseInt(form.leads)         || 0,
-        deposits:      parseInt(form.deposits)      || 0,
-        notes:         form.notes.trim() || undefined,
+        views:          parseInt(form.views)    || 0,
+        likes:          parseInt(form.likes)    || 0,
+        comments:       parseInt(form.comments) || 0,
+        shares:         parseInt(form.shares)   || 0,
+        saves:          parseInt(form.saves)    || 0,
+        account_status: form.account_status || undefined,
+        video_status:   form.video_status   || undefined,
+        screenshot_url: form.screenshot_url.trim() || undefined,
+        notes:          form.notes.trim()          || undefined,
       });
       navigate('/results');
     } catch (err) {
@@ -73,8 +81,7 @@ export default function ResultNew() {
             <div className="empty-icon">🧪</div>
             <div className="empty-title">No active experiments assigned</div>
             <div className="empty-desc">
-              You need an active experiment (planned, running, or waiting for result) assigned
-              to one of your bundles before you can submit results.
+              You need an active experiment assigned to one of your bundles before submitting results.
             </div>
           </div>
         </div>
@@ -87,14 +94,14 @@ export default function ResultNew() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Submit Results</h1>
-          <div className="page-subtitle">Submit metrics for an active experiment</div>
+          <div className="page-subtitle">Report platform metrics for your experiment</div>
         </div>
       </div>
 
       <div style={{ maxWidth: 580 }}>
         <form onSubmit={submit}>
 
-          {/* ── Experiment picker ─────────────────────────────────────────── */}
+          {/* ── Experiment picker ───────────────────────────────────────── */}
           <div className="card" style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <FlaskConical size={15} strokeWidth={1.75} style={{ color: 'var(--accent)' }} />
@@ -115,89 +122,108 @@ export default function ResultNew() {
                 ))}
               </select>
             </div>
-
             {selectedExp && (
               <div style={{
                 marginTop: 12, padding: '10px 12px',
                 background: 'var(--surface-2)', borderRadius: 'var(--radius)',
                 display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13,
               }}>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Bundle: </span>
-                  <span style={{ color: 'var(--text)' }}>{selectedExp.bundle_name}</span>
-                </div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Bundle: </span>
+                  <span>{selectedExp.bundle_name}</span></div>
                 {selectedExp.geo && (
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>GEO: </span>
-                    <span style={{ color: 'var(--text)' }}>{selectedExp.geo}</span>
-                  </div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>GEO: </span>
+                    <span>{selectedExp.geo}</span></div>
                 )}
                 {selectedExp.offer && (
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Offer: </span>
-                    <span style={{ color: 'var(--text)' }}>{selectedExp.offer}</span>
-                  </div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Offer: </span>
+                    <span>{selectedExp.offer}</span></div>
                 )}
-                <div>
-                  <span className={`badge badge-${
-                    selectedExp.status === 'running' ? 'testing' :
-                    selectedExp.status === 'planned' ? 'pending' : 'warmup'
-                  }`}>{selectedExp.status}</span>
-                </div>
+                <span className={`badge badge-${
+                  selectedExp.status === 'running' ? 'testing' :
+                  selectedExp.status === 'planned' ? 'pending' : 'warmup'
+                }`}>{selectedExp.status}</span>
               </div>
             )}
           </div>
 
-          {/* ── Metrics ───────────────────────────────────────────────────── */}
+          {/* ── Platform Metrics ────────────────────────────────────────── */}
           <div className="card" style={{ marginBottom: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Metrics</div>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Platform Metrics</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 14 }}>
+              Stats visible on the platform (TikTok, Instagram, etc.)
+            </div>
 
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Views</label>
                 <input className="form-control" type="number" min="0"
-                  value={form.views} onChange={e => set('views', e.target.value)}
-                  placeholder="0" />
+                  value={form.views} onChange={e => set('views', e.target.value)} placeholder="0" />
               </div>
               <div className="form-group">
                 <label className="form-label">Likes</label>
                 <input className="form-control" type="number" min="0"
-                  value={form.likes} onChange={e => set('likes', e.target.value)}
-                  placeholder="0" />
+                  value={form.likes} onChange={e => set('likes', e.target.value)} placeholder="0" />
               </div>
             </div>
-
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Registrations</label>
+                <label className="form-label">Comments</label>
                 <input className="form-control" type="number" min="0"
-                  value={form.registrations} onChange={e => set('registrations', e.target.value)}
-                  placeholder="0" />
+                  value={form.comments} onChange={e => set('comments', e.target.value)} placeholder="0" />
               </div>
               <div className="form-group">
-                <label className="form-label">Leads</label>
+                <label className="form-label">Shares</label>
                 <input className="form-control" type="number" min="0"
-                  value={form.leads} onChange={e => set('leads', e.target.value)}
-                  placeholder="0" />
+                  value={form.shares} onChange={e => set('shares', e.target.value)} placeholder="0" />
               </div>
             </div>
-
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Deposits</label>
+              <label className="form-label">Saves / Bookmarks</label>
               <input className="form-control" type="number" min="0"
-                value={form.deposits} onChange={e => set('deposits', e.target.value)}
-                placeholder="0" />
+                value={form.saves} onChange={e => set('saves', e.target.value)} placeholder="0" />
             </div>
           </div>
 
-          {/* ── Notes ─────────────────────────────────────────────────────── */}
+          {/* ── Status ──────────────────────────────────────────────────── */}
           <div className="card" style={{ marginBottom: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Notes</div>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Status</div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Account Status</label>
+                <select className="form-control"
+                  value={form.account_status}
+                  onChange={e => set('account_status', e.target.value)}>
+                  <option value="">— Select —</option>
+                  {ACCOUNT_STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Video Status</label>
+                <select className="form-control"
+                  value={form.video_status}
+                  onChange={e => set('video_status', e.target.value)}>
+                  <option value="">— Select —</option>
+                  {VIDEO_STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Proof & Notes ───────────────────────────────────────────── */}
+          <div className="card" style={{ marginBottom: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Proof & Notes</div>
+            <div className="form-group">
+              <label className="form-label">Screenshot URL (optional)</label>
+              <input className="form-control" type="url"
+                value={form.screenshot_url}
+                onChange={e => set('screenshot_url', e.target.value)}
+                placeholder="https://… link to screenshot" />
+            </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Notes (optional)</label>
               <textarea className="form-control" rows={3}
                 value={form.notes} onChange={e => set('notes', e.target.value)}
-                placeholder="Observations, what happened, anything the admin should know…" />
+                placeholder="What happened, observations, anything the admin should know…" />
             </div>
           </div>
 
