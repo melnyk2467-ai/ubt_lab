@@ -314,3 +314,31 @@ CREATE TABLE IF NOT EXISTS test_bundle_experiments (
 
 CREATE INDEX IF NOT EXISTS idx_tbe_bundle ON test_bundle_experiments(test_bundle_id);
 CREATE INDEX IF NOT EXISTS idx_tbe_status ON test_bundle_experiments(status);
+
+-- ── Experiment Results ────────────────────────────────────────────────────────
+-- Results submitted by workers for test_bundle_experiments.
+-- Separate from legacy result_uploads (video-based). Both tables coexist.
+CREATE TABLE IF NOT EXISTS experiment_results (
+  id                        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  test_bundle_id            UUID        REFERENCES test_bundles(id)           ON DELETE SET NULL,
+  test_bundle_experiment_id UUID        REFERENCES test_bundle_experiments(id) ON DELETE SET NULL,
+  worker_id                 UUID        NOT NULL REFERENCES users(id)          ON DELETE CASCADE,
+  views                     INTEGER     NOT NULL DEFAULT 0,
+  likes                     INTEGER     NOT NULL DEFAULT 0,
+  registrations             INTEGER     NOT NULL DEFAULT 0,
+  leads                     INTEGER     NOT NULL DEFAULT 0,
+  deposits                  INTEGER     NOT NULL DEFAULT 0,
+  notes                     TEXT,
+  status                    TEXT        NOT NULL DEFAULT 'submitted'
+    CHECK (status IN ('submitted', 'approved', 'rejected')),
+  admin_feedback            TEXT,
+  reviewed_by               UUID        REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at               TIMESTAMPTZ,
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_exp_res_worker     ON experiment_results(worker_id);
+CREATE INDEX IF NOT EXISTS idx_exp_res_bundle     ON experiment_results(test_bundle_id);
+CREATE INDEX IF NOT EXISTS idx_exp_res_experiment ON experiment_results(test_bundle_experiment_id);
+CREATE INDEX IF NOT EXISTS idx_exp_res_status     ON experiment_results(status);

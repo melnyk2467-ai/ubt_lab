@@ -53,7 +53,7 @@ export const NAV = [
   },
   {
     type:  'link',
-    to:    '/result-uploads',
+    to:    '/results',
     label: 'Results',
     icon:  Upload,
     roles: ['admin'],
@@ -97,7 +97,7 @@ export const NAV = [
   },
   {
     type:  'link',
-    to:    '/result-uploads',
+    to:    '/results',
     label: 'Submit Results',
     icon:  Upload,
     roles: ['worker'],

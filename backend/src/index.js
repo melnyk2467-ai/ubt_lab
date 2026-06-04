@@ -43,6 +43,7 @@ app.use('/api/workers',            require('./routes/workers'));
 app.use('/api/proxies',            require('./routes/proxies'));
 app.use('/api/test-bundles',            require('./routes/test-bundles'));
 app.use('/api/test-bundle-experiments', require('./routes/test-bundle-experiments'));
+app.use('/api/experiment-results',      require('./routes/experiment-results'));
 app.use('/api/assignment-center', require('./routes/assignment-center'));
 app.use('/api/result-uploads',   require('./routes/result-uploads'));
 app.use('/api/workspace', require('./routes/workspace'));

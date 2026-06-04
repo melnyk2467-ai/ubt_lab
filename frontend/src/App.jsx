@@ -17,6 +17,11 @@ import ResultUploadDetail  from './pages/ResultUploadDetail';
 import TestBundles         from './pages/TestBundles';
 import TestBundleDetail    from './pages/TestBundleDetail';
 
+// Pages — shared results workflow
+import Results          from './pages/Results';
+import ResultNew        from './pages/ResultNew';
+import MyResults        from './pages/MyResults';
+
 // Pages — admin only
 import Tests            from './pages/Tests';
 import Users            from './pages/Users';
@@ -65,6 +70,12 @@ function ProxiesRoute() {
   return user?.role === 'admin' ? <Proxies /> : <MyProxies />;
 }
 
+/** /results renders admin Results or worker MyResults by role. */
+function ResultsRoute() {
+  const { user } = useAuth();
+  return user?.role === 'admin' ? <Results /> : <MyResults />;
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -84,6 +95,10 @@ export default function App() {
             <Route path="/tasks"             element={<Protected><Tasks /></Protected>} />
             <Route path="/test-bundles"      element={<Protected><TestBundles /></Protected>} />
             <Route path="/test-bundles/:id"  element={<Protected><TestBundleDetail /></Protected>} />
+            {/* New experiment results workflow */}
+            <Route path="/results"            element={<Protected><ResultsRoute /></Protected>} />
+            <Route path="/results/new"        element={<Protected><ResultNew /></Protected>} />
+            {/* Legacy result uploads — kept for backward compat */}
             <Route path="/result-uploads"     element={<Protected><ResultUploads /></Protected>} />
             <Route path="/result-uploads/new" element={<Protected><ResultUploadNew /></Protected>} />
             <Route path="/result-uploads/:id" element={<Protected><ResultUploadDetail /></Protected>} />
