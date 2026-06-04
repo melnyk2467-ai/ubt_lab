@@ -18,6 +18,7 @@ import TestBundles         from './pages/TestBundles';
 import TestBundleDetail    from './pages/TestBundleDetail';
 
 // Pages — admin only
+import Tests            from './pages/Tests';
 import Users            from './pages/Users';
 import Offers           from './pages/Offers';
 import Bundles          from './pages/Bundles';
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="/proxies"            element={<Protected><ProxiesRoute /></Protected>} />
 
             {/* Admin only */}
+            <Route path="/tests"             element={<AdminOnly><Tests /></AdminOnly>} />
             <Route path="/users"             element={<AdminOnly><Users /></AdminOnly>} />
             <Route path="/offers"            element={<AdminOnly><Offers /></AdminOnly>} />
             <Route path="/bundles"           element={<AdminOnly><Bundles /></AdminOnly>} />

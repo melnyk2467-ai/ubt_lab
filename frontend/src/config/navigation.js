@@ -46,7 +46,7 @@ export const NAV = [
   },
   {
     type:  'link',
-    to:    '/research/experiments',
+    to:    '/tests',
     label: 'Tests',
     icon:  FlaskConical,
     roles: ['admin'],

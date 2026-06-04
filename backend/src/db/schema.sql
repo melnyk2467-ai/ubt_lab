@@ -292,3 +292,25 @@ CREATE INDEX IF NOT EXISTS idx_test_bundles_status   ON test_bundles(status);
 CREATE INDEX IF NOT EXISTS idx_test_bundles_geo      ON test_bundles(geo);
 CREATE INDEX IF NOT EXISTS idx_test_bundles_platform ON test_bundles(source_platform);
 CREATE INDEX IF NOT EXISTS idx_test_bundles_owner    ON test_bundles(owner_id);
+
+-- ── Test Bundle Experiments ───────────────────────────────────────────────────
+-- Individual tests/experiments within a UBT Bundle.
+CREATE TABLE IF NOT EXISTS test_bundle_experiments (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  test_bundle_id   UUID        NOT NULL REFERENCES test_bundles(id) ON DELETE CASCADE,
+  name             TEXT        NOT NULL,
+  status           TEXT        NOT NULL DEFAULT 'planned'
+    CHECK (status IN ('planned', 'running', 'waiting_result', 'completed', 'success', 'failed', 'retest')),
+  test_goal        TEXT,
+  variable_tested  TEXT,
+  setup_notes      TEXT,
+  start_date       DATE,
+  end_date         DATE,
+  result_summary   TEXT,
+  conclusion       TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tbe_bundle ON test_bundle_experiments(test_bundle_id);
+CREATE INDEX IF NOT EXISTS idx_tbe_status ON test_bundle_experiments(status);
