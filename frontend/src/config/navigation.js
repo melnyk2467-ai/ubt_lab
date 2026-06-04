@@ -1,45 +1,33 @@
 import {
   LayoutDashboard,
-  Lightbulb,
-  Sparkles,
-  Brain,
-  FlaskConical,
-  BarChart3,
-  Trophy,
-  Package,
-  PlaySquare,
-  Users,
-  UserCircle,
-  CheckSquare,
-  TrendingUp,
-  Tag,
-  UserCheck,
-  Beaker,
-  ClipboardList,
-  Upload,
-  Shield,
   Layers,
+  FlaskConical,
+  Upload,
+  UserCheck,
+  ClipboardList,
+  Shield,
+  CheckSquare,
 } from 'lucide-react';
 
 /**
  * UBT Lab — Navigation Configuration
  *
- * `icon` is now a Lucide React component (not an emoji string).
- * Layout.jsx renders it with <item.icon size={15} strokeWidth={1.75} />
+ * Flat structure: no nested groups.
+ * Role filtering is done in Layout.jsx via canSee(item.roles).
  *
- * Roles
- * -----
- * `roles: null`          → visible to ALL authenticated users
- * `roles: ['admin']`     → admins only
- * `roles: ['worker']`    → workers only
+ *   roles: null        → visible to ALL authenticated users
+ *   roles: ['admin']   → admin only
+ *   roles: ['worker']  → worker only
  *
- * workerLabel
- * -----------
- * Optional alternative label when the logged-in user is a worker.
+ * Admin sidebar:  Dashboard · UBT Bundles · Tests · Results · Workers · Assignments · Proxies
+ * Worker sidebar: Dashboard · My Bundles  · My Tasks · Submit Results
+ *
+ * Research Engine pages (Ideas, Patterns, Hypotheses, Experiments, Results, Winners)
+ * remain accessible to admins via direct URL but are NOT listed in the sidebar.
  */
 
 export const NAV = [
-  // ── Standalone ──────────────────────────────────────────────────────────────
+  // ── Shared ───────────────────────────────────────────────────────────────────
   {
     type:  'link',
     to:    '/',
@@ -48,80 +36,70 @@ export const NAV = [
     roles: null,
   },
 
-  // ── UBT Bundles ──────────────────────────────────────────────────────────────
+  // ── Admin ─────────────────────────────────────────────────────────────────────
   {
     type:  'link',
     to:    '/test-bundles',
     label: 'UBT Bundles',
-    workerLabel: 'My Bundles',
     icon:  Layers,
-    roles: null,
-  },
-
-  // ── Research Engine ──────────────────────────────────────────────────────────
-  {
-    type:  'group',
-    label: 'Research',
-    icon:  FlaskConical,
-    roles: null,
-    items: [
-      { to: '/research/ideas',       label: 'Ideas',       icon: Lightbulb,    roles: ['admin'] },
-      { to: '/research/patterns',    label: 'Patterns',    icon: Sparkles,     roles: ['admin'] },
-      { to: '/research/hypotheses',  label: 'Hypotheses',  icon: Brain,        roles: ['admin'] },
-      { to: '/research/experiments', label: 'Experiments', workerLabel: 'My Experiments', icon: Beaker, roles: null },
-      { to: '/research/results',     label: 'Results',     icon: BarChart3,    roles: ['admin'] },
-      { to: '/research/winners',     label: 'Winners',     icon: Trophy,       roles: ['admin'] },
-    ],
-  },
-
-  // ── Content ──────────────────────────────────────────────────────────────────
-  {
-    type:  'group',
-    label: 'Content',
-    icon:  PlaySquare,
-    roles: null,
-    items: [
-      { to: '/bundles',        label: 'Bundles',         icon: Package,    roles: ['admin'] },
-      { to: '/videos',         label: 'Videos',          workerLabel: 'My Videos',   icon: PlaySquare, roles: null },
-      { to: '/result-uploads', label: 'Result Uploads',  workerLabel: 'My Uploads',  icon: Upload,     roles: null },
-    ],
-  },
-
-  // ── Team ─────────────────────────────────────────────────────────────────────
-  {
-    type:  'group',
-    label: 'Team',
-    icon:  Users,
-    roles: null,
-    items: [
-      { to: '/users',    label: 'Users',    icon: Users,       roles: ['admin'] },
-      { to: '/workers',  label: 'Workers',  icon: UserCheck,   roles: ['admin'] },
-      { to: '/accounts',           label: 'Accounts',          workerLabel: 'My Accounts', icon: UserCircle,    roles: null },
-      { to: '/tasks',              label: 'Tasks',             workerLabel: 'My Tasks',    icon: CheckSquare,  roles: null },
-      { to: '/proxies',            label: 'Proxies',           workerLabel: 'My Proxies',  icon: Shield,       roles: null },
-      { to: '/assignment-center',  label: 'Assignment Center',                             icon: ClipboardList, roles: ['admin'] },
-    ],
-  },
-
-  // ── Offers ───────────────────────────────────────────────────────────────────
-  {
-    type:  'group',
-    label: 'Offers',
-    icon:  Tag,
     roles: ['admin'],
-    items: [
-      { to: '/offers', label: 'Offers', icon: Tag, roles: ['admin'] },
-    ],
+  },
+  {
+    type:  'link',
+    to:    '/research/experiments',
+    label: 'Tests',
+    icon:  FlaskConical,
+    roles: ['admin'],
+  },
+  {
+    type:  'link',
+    to:    '/result-uploads',
+    label: 'Results',
+    icon:  Upload,
+    roles: ['admin'],
+  },
+  {
+    type:  'link',
+    to:    '/workers',
+    label: 'Workers',
+    icon:  UserCheck,
+    roles: ['admin'],
+  },
+  {
+    type:  'link',
+    to:    '/assignment-center',
+    label: 'Assignments',
+    icon:  ClipboardList,
+    roles: ['admin'],
+  },
+  {
+    type:  'link',
+    to:    '/proxies',
+    label: 'Proxies',
+    icon:  Shield,
+    roles: ['admin'],
   },
 
-  // ── Analytics ────────────────────────────────────────────────────────────────
+  // ── Worker ────────────────────────────────────────────────────────────────────
   {
-    type:  'group',
-    label: 'Analytics',
-    icon:  TrendingUp,
-    roles: null,
-    items: [
-      { to: '/metrics', label: 'Metrics', workerLabel: 'My Metrics', icon: TrendingUp, roles: null },
-    ],
+    type:  'link',
+    to:    '/test-bundles',
+    label: 'My Bundles',
+    icon:  Layers,
+    roles: ['worker'],
+  },
+  {
+    type:  'link',
+    to:    '/tasks',
+    label: 'My Tasks',
+    icon:  CheckSquare,
+    roles: ['worker'],
+  },
+  {
+    type:  'link',
+    to:    '/result-uploads',
+    label: 'Submit Results',
+    icon:  Upload,
+    roles: ['worker'],
   },
 ];
