@@ -67,6 +67,68 @@ router.put('/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// ── PATCH /:id/role — safe role promotion / demotion ─────────────────────────
+// Safety checks (all enforced server-side):
+//   1. Requester must be admin           (requireAdmin)
+//   2. Role must be 'admin' or 'worker'
+//   3. Target user must exist
+//   4. Requester cannot change their own role
+//   5. Cannot remove the last remaining admin
+// All changes are logged to admin_role_changes.
+router.patch('/:id/role', requireAdmin, async (req, res) => {
+  const { role } = req.body;
+  const targetId = req.params.id;
+  const requesterId = req.user.id;
+
+  if (!['admin', 'worker'].includes(role)) {
+    return res.status(400).json({ error: 'role must be admin or worker' });
+  }
+  if (targetId === requesterId) {
+    return res.status(400).json({ error: 'You cannot change your own role' });
+  }
+
+  try {
+    // Fetch target user
+    const { rows: targetRows } = await db.query(
+      'SELECT id, name, role FROM users WHERE id = $1', [targetId]
+    );
+    if (!targetRows[0]) return res.status(404).json({ error: 'User not found' });
+
+    const target = targetRows[0];
+    if (target.role === role) {
+      return res.status(400).json({ error: `User is already a ${role}` });
+    }
+
+    // If demoting an admin → ensure at least one other admin remains
+    if (target.role === 'admin' && role === 'worker') {
+      const { rows: adminCount } = await db.query(
+        "SELECT COUNT(*) FROM users WHERE role = 'admin'"
+      );
+      if (parseInt(adminCount[0].count) <= 1) {
+        return res.status(400).json({ error: 'Cannot demote the last remaining admin' });
+      }
+    }
+
+    // Apply role change
+    const { rows: updated } = await db.query(
+      `UPDATE users SET role = $1 WHERE id = $2
+       RETURNING id, name, email, role, is_active, created_at`,
+      [role, targetId]
+    );
+
+    // Audit log
+    await db.query(
+      `INSERT INTO admin_role_changes (changed_by, target_user, old_role, new_role)
+       VALUES ($1, $2, $3, $4)`,
+      [requesterId, targetId, target.role, role]
+    );
+
+    res.json(updated[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const { rowCount } = await db.query('DELETE FROM users WHERE id = $1', [req.params.id]);

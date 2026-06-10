@@ -343,6 +343,19 @@ CREATE INDEX IF NOT EXISTS idx_exp_res_bundle     ON experiment_results(test_bun
 CREATE INDEX IF NOT EXISTS idx_exp_res_experiment ON experiment_results(test_bundle_experiment_id);
 CREATE INDEX IF NOT EXISTS idx_exp_res_status     ON experiment_results(status);
 
+-- ── Role Change Audit Log ────────────────────────────────────────────────────
+-- Immutable record of every admin/worker promotion or demotion.
+CREATE TABLE IF NOT EXISTS admin_role_changes (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  changed_by    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_user   UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  old_role      TEXT        NOT NULL,
+  new_role      TEXT        NOT NULL,
+  changed_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_role_changes_target ON admin_role_changes(target_user);
+CREATE INDEX IF NOT EXISTS idx_role_changes_by     ON admin_role_changes(changed_by);
+
 -- Platform/task metrics submitted by workers (added after initial release)
 ALTER TABLE experiment_results ADD COLUMN IF NOT EXISTS comments       INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE experiment_results ADD COLUMN IF NOT EXISTS shares         INTEGER NOT NULL DEFAULT 0;
