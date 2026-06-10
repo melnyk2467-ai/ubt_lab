@@ -36,6 +36,38 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Self-registration — always creates a worker account, never admin
+router.post('/register', async (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (!name || !name.trim())     return res.status(400).json({ error: 'Full name is required' });
+  if (!email || !email.trim())   return res.status(400).json({ error: 'Email is required' });
+  if (!password)                 return res.status(400).json({ error: 'Password is required' });
+  if (password.length < 8)       return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const { rows } = await db.query(
+      `INSERT INTO users (name, email, password_hash, role)
+       VALUES ($1, $2, $3, 'worker')
+       RETURNING id, name, email, role`,
+      [name.trim(), email.toLowerCase().trim(), hash]
+    );
+    const user = rows[0];
+
+    // Auto sign-in: return a token so the frontend can log in immediately
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, name: user.name },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    res.status(201).json({ token, user });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'An account with this email already exists' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Bootstrap: create first admin (only works if no users exist)
 router.post('/setup', async (req, res) => {
   const { name, email, password } = req.body;
