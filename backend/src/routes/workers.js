@@ -7,7 +7,7 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const { rows } = await db.query(`
       SELECT
-        u.id, u.name, u.email, u.is_active, u.created_at,
+        u.id, u.name, u.email, u.role, u.is_active, u.created_at,
         (SELECT COUNT(*) FROM accounts a
            WHERE a.user_id = u.id)::int                              AS accounts_count,
         (SELECT COUNT(*) FROM tasks t
